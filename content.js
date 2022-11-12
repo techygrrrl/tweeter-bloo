@@ -4,7 +4,7 @@ const MAX_PROFILE_PAGE_RETRIES = 10;
 const MAX_PARENT_RETRIES = 20;
 
 const pooEmoji = `
-<svg style="display: block; width: 20px; height: 20px; margin-left: 10px" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 47.5 47.5"
+<svg data-poo="1" style="display: inline-block; width: 20px; height: 20px; margin-left: 10px" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 47.5 47.5"
   style="enable-background:new 0 0 47.5 47.5;" id="svg2" xml:space="preserve">
   <defs id="defs6">
     <clipPath id="clipPath18">
@@ -68,13 +68,9 @@ let checkmarkOnProfileElement;
 let shouldReplaceIconOnProfilePage = null;
 
 // Feed page
-// TODO: Support feed
-// const map = {
-//   username: {
-//     found: false,
-//     replaced: false
-//   }
-// }
+// This gets updated from the background script
+let globalBlueVerified = {
+}
 
 
 
@@ -135,10 +131,6 @@ function lookForCheckmarkOnProfilePage() {
       clearInterval(hoverCardInterval)
     }, 20)
 
-    // TODO: Should we tho??
-    // shouldReplaceIconOnProfilePage
-    // Click the icon
-
     foundProfileIcon = true
     clearInterval(interval)
   }, 500)
@@ -178,30 +170,76 @@ function replaceCheckmarkOnProfilePage() {
   }, 500)
 }
 
-const blueVerified = {
-  // username: true
+
+const MAX_FEED_PAGE_RETRIES = 20
+
+function observeFeed() {
+  if (!location.href.endsWith('home')) {
+    console.log('Not on home feed')
+    return
+  }
+
+  const interval = setInterval(() => {
+    performFeedCheckMarkReplacement()
+  }, 5000)
 }
 
+
+
 function performFeedCheckMarkReplacement() {
-  const usernamesInFeed = document.querySelectorAll('[data-testid="User-Names"]')
+  // console.log('Processing report', report)
+  let retryCountFeed = 0;
+  let usernamesInFeed = document.querySelectorAll('[data-testid="User-Names"]')
 
-  usernamesInFeed.forEach((usernameNode) => {
-    const username = usernameNode.textContent.split('@')[1].split('·')[0]
+  const interval = setInterval(() => {
+    retryCountFeed++;
 
-    // TODO: is username in list of blue verified?
+    usernamesInFeed = document.querySelectorAll('[data-testid="User-Names"]')
 
-  })
+    if (retryCountFeed > MAX_FEED_PAGE_RETRIES) {
+      clearInterval(interval)
+      return
+    }
+
+    if (!usernamesInFeed) return
+
+    usernamesInFeed.forEach((usernameNode) => {
+      const username = usernameNode.textContent.split('@')[1].split('·')[0]?.trim()
+      
+      // console.log('Processing username', username)
+      
+      const isBlueVerified = globalBlueVerified[username]
+      // console.log(username, isBlueVerified)
+      if (isBlueVerified) {
+        console.log(`🌀🌀🌀 username ${username} is blue verified`)
+        console.log(usernameNode)
+
+        const svgElement = usernameNode.querySelector('svg')
+        if (svgElement && svgElement.hasAttribute('data-poo')) {
+          return
+        }
+
+        const pooImage = document.createElement('span')
+        pooImage.style.display = 'flex'
+        pooImage.innerHTML = pooEmoji
+    
+        svgElement.replaceWith(pooImage)
+      } else {
+        // console.log(`username ${username} is NOT blue verified`)
+      }
+    })
+
+    clearInterval(interval)
+  }, 500)
 }
 
 function performTweeterBloo() {
   lookForCheckmarkOnProfilePage()
   replaceCheckmarkOnProfilePage()
-
-  performFeedCheckMarkReplacement()
+  observeFeed()
 }
 
 function handlePageNavigation(request) {
-  // type, url
   resetEverything();
   performTweeterBloo();
 }
@@ -221,10 +259,28 @@ chrome.runtime.onMessage.addListener(
       case 'URL_CHANGED':
         return handlePageNavigation(request)
 
+      case 'VERIFIED_REPORT':
+        return handleVerifiedReport(request)
+
       default:
         //
     }
 });
+
+
+function handleVerifiedReport(request) {
+  if (request.type !== 'VERIFIED_REPORT') {
+    return
+  }
+
+  globalBlueVerified = {
+    ...globalBlueVerified,
+    ...request.data,
+  }
+
+  performFeedCheckMarkReplacement()
+}
+
 
 
 // Do everything

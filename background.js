@@ -55,8 +55,10 @@ function onAttach(tabId) {
           },
           // (result?: object) => void
           (result) => {
-            if (result && result?.body?.includes('"is_blue_verified":')) {
-              handleTimelineResponse(result?.body);
+            // console.log('???? params', params)
+            const isRightUrl = params?.response?.url?.includes('HomeTimeline')
+            if (isRightUrl && result && result?.body?.includes('"is_blue_verified":')) {
+              handleTimelineResponse(result?.body, source.tabId, params);
             }
           }
         );
@@ -65,22 +67,46 @@ function onAttach(tabId) {
   );
 }
 
-function handleTimelineResponse(responseBody) {
+function handleTimelineResponse(responseBody, tabId, params) {
+  console.log('Handling response', params.response.url)
+
   const data = JSON.parse(responseBody).data
   const instructions = data.home.home_timeline_urt.instructions;
 
+  const verifiedReport = {
+  }
+
   instructions.forEach(({ entries }) => {
-    entries.forEach((entry, idx) => {
-      console.log('processing index', idx)
+    entries?.forEach((entry, idx) => {
+      console.log('Processing index', idx)
+
+      if (entry.content.__typename !== 'TimelineTimelineItem') {
+        return
+      }
+
       const itemContent = entry.content.itemContent;
 
       if (itemContent) {
         // console.log('tweet??', itemContent.tweet_results.result)
-        const username = itemContent.tweet_results.result.core.user_results.result.legacy.screen_name;
-        const isBlueVerified = itemContent.tweet_results.result.core.user_results.result.is_blue_verified;
+        const username = itemContent.tweet_results.result.core?.user_results.result.legacy.screen_name;
+        const isBlueVerified = itemContent.tweet_results.result.core?.user_results.result.is_blue_verified;
   
-        // console.log({ username, isBlueVerified })
+        verifiedReport[username] = isBlueVerified
       }
+    })
+  })
+
+  // console.log('tabId???', tabId)
+  // console.log('params???', params)
+
+  console.log('Sending report', verifiedReport)
+
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      chrome.tabs.sendMessage(tab.id, {
+        type: "VERIFIED_REPORT",
+        data: verifiedReport,
+      });
     })
   })
 }
