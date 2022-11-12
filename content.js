@@ -77,7 +77,8 @@ let shouldReplaceIconOnProfilePage = null;
 // }
 
 
-function lookForCheckmark() {
+
+function lookForCheckmarkOnProfilePage() {
   if (foundProfileIcon) return;
 
   const interval = setInterval(() => {
@@ -130,7 +131,7 @@ function lookForCheckmark() {
   
       shouldReplaceIconOnProfilePage = textContent.includes("Twitter Blue")
 
-      checkmarkOnProfileElement.parentNode.click()
+      checkmarkOnProfileElement?.parentNode?.click()
       clearInterval(hoverCardInterval)
     }, 20)
 
@@ -144,7 +145,7 @@ function lookForCheckmark() {
 }
 
 
-function replaceCheckmark() {
+function replaceCheckmarkOnProfilePage() {
   if (checkmarkOnProfileReplaced) return;
   
   const interval = setInterval(() => {
@@ -177,7 +178,54 @@ function replaceCheckmark() {
   }, 500)
 }
 
-(function performTweeterBloo() {
-  lookForCheckmark()
-  replaceCheckmark()
-})();
+const blueVerified = {
+  // username: true
+}
+
+function performFeedCheckMarkReplacement() {
+  const usernamesInFeed = document.querySelectorAll('[data-testid="User-Names"]')
+
+  usernamesInFeed.forEach((usernameNode) => {
+    const username = usernameNode.textContent.split('@')[1].split('·')[0]
+
+    // TODO: is username in list of blue verified?
+
+  })
+}
+
+function performTweeterBloo() {
+  lookForCheckmarkOnProfilePage()
+  replaceCheckmarkOnProfilePage()
+
+  performFeedCheckMarkReplacement()
+}
+
+function handlePageNavigation(request) {
+  // type, url
+  resetEverything();
+  performTweeterBloo();
+}
+
+function resetEverything() {
+  retryCount = 0;
+  retryCountParentNode = 0;
+  foundProfileIcon = false;
+  checkmarkOnProfileReplaced = false;
+  checkmarkOnProfileElement = null;
+  shouldReplaceIconOnProfilePage = null;
+}
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    switch (request.type) {
+      case 'URL_CHANGED':
+        return handlePageNavigation(request)
+
+      default:
+        //
+    }
+});
+
+
+// Do everything
+performTweeterBloo();
