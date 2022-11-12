@@ -14,7 +14,8 @@
     "service_worker": "background.js"
   },
   "permissions": [
-    "tabs"
+    "tabs",
+    "debugger"
   ],
   "content_scripts": [
     {
