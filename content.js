@@ -4,7 +4,7 @@ const MAX_PROFILE_PAGE_RETRIES = 10;
 const MAX_PARENT_RETRIES = 20;
 
 const pooEmoji = `
-<svg data-poo="1" style="display: inline-block; width: 20px; height: 20px; margin-left: 10px" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 47.5 47.5"
+<svg data-poo="1" style="display: block; width: 20px; height: 20px; padding: 0 10px" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 47.5 47.5"
   style="enable-background:new 0 0 47.5 47.5;" id="svg2" xml:space="preserve">
   <defs id="defs6">
     <clipPath id="clipPath18">
@@ -162,6 +162,11 @@ function replaceCheckmarkOnProfilePage() {
     }
 
     const pooImage = document.createElement('span')
+    pooImage.style['-webkit-animation'] = 'rotating-poo 2s linear infinite'
+    pooImage.style['-moz-animation'] = 'rotating-poo 2s linear infinite'
+    pooImage.style['-ms-animation'] = 'rotating-poo 2s linear infinite'
+    pooImage.style['-o-animation'] = 'rotating-poo 2s linear infinite'
+    pooImage.style['animation'] = 'rotating-poo 2s linear infinite'
     pooImage.innerHTML = pooEmoji
 
     checkmarkOnProfileElement.replaceWith(pooImage)
@@ -221,6 +226,11 @@ function performFeedCheckMarkReplacement() {
 
         const pooImage = document.createElement('span')
         pooImage.style.display = 'flex'
+        pooImage.style['-webkit-animation'] = 'rotating-poo 2s linear infinite'
+        pooImage.style['-moz-animation'] = 'rotating-poo 2s linear infinite'
+        pooImage.style['-ms-animation'] = 'rotating-poo 2s linear infinite'
+        pooImage.style['-o-animation'] = 'rotating-poo 2s linear infinite'
+        pooImage.style['animation'] = 'rotating-poo 2s linear infinite'
         pooImage.innerHTML = pooEmoji
     
         svgElement.replaceWith(pooImage)
@@ -236,7 +246,46 @@ function performFeedCheckMarkReplacement() {
 function performTweeterBloo() {
   lookForCheckmarkOnProfilePage()
   replaceCheckmarkOnProfilePage()
+  addAnimationCss()
   observeFeed()
+}
+
+function addAnimationCss() {
+  const css = `
+  @-webkit-keyframes rotating-poo /* Safari and Chrome */ {
+    from {
+      -webkit-transform: rotate(0deg);
+      -o-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    to {
+      -webkit-transform: rotate(360deg);
+      -o-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes rotating-poo {
+    from {
+      -ms-transform: rotate(0deg);
+      -moz-transform: rotate(0deg);
+      -webkit-transform: rotate(0deg);
+      -o-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    to {
+      -ms-transform: rotate(360deg);
+      -moz-transform: rotate(360deg);
+      -webkit-transform: rotate(360deg);
+      -o-transform: rotate(360deg);
+      transform: rotate(360deg);
+    }
+  }
+  `;
+
+  const style = document.createElement('style')
+  style.innerHTML = css
+
+  document.head.appendChild(style)
 }
 
 function handlePageNavigation(request) {
